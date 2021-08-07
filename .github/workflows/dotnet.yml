@@ -1,0 +1,36 @@
+name: .NET Build
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1
+      - name: Navigate to Workspace
+        run: cd $GITHUB_WORKSPACE
+      - name: Restore Packages
+        run: nuget restore Certify.sln
+      - name: Build Solution
+        run: |
+          msbuild.exe Certify.sln /p:platform="Any CPU" /p:configuration="Release"
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      - name: Create Release
+        id: create_release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          title: Release ${{ github.sha }}
+          files: ./Certify/bin/Release/Certify.exe
+          prerelease: false
